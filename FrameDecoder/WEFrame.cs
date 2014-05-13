@@ -26,7 +26,7 @@ namespace FrameDecoder
         public long DeviceNum
         {
             get { return deviceNum; }
-            //set { deviceNum = value; }
+            set { deviceNum = value; }
         }
 
         MainServeRequestResponse requestMark;
@@ -36,7 +36,7 @@ namespace FrameDecoder
         public MainServeRequestResponse RequestMark
         {
           get { return requestMark; }
-          set { requestMark = value; }
+            set { requestMark = value; }
         }
 
 
@@ -63,6 +63,17 @@ namespace FrameDecoder
         }
 
 
+        long dataSize;
+        /// <summary>
+        /// 帧中显示的数据长度 用两位表示
+        /// </summary>
+        public long DataSize
+        {
+            get { return dataSize; }
+            set { dataSize = value; }
+        }
+
+
         /// <summary>
         /// 编码控制命令
         /// </summary>
@@ -74,6 +85,7 @@ namespace FrameDecoder
             controlCode = (byte)((byte)requestMark + (byte)responseStatus + (byte)responseCode);
             return controlCode;                            
         }
+
 
         /// <summary>
         /// 解码控制命令
@@ -145,11 +157,11 @@ namespace FrameDecoder
         }
 
         /// <summary>
-        /// 号码格式是BCD码  也就是 0x11 = 11        0x11 != 17
+        /// 号码格式是BCD码  也就是 0x11 == 11        0x11 != 17
         /// </summary>
         /// <param name="BCDNum"></param>
         /// <returns></returns>
-        static long readBCDDeviceNum(byte[] BCDNum)
+        public static long readBCDDeviceNum(byte[] BCDNum)
         {
             long result = 0;
             for (int i = 0; i < BCDNum.Length; i++)
@@ -210,7 +222,7 @@ namespace FrameDecoder
             return FrameDecodeResult.error_default;
         }
 
-        
+ 
 
 
     }
@@ -251,7 +263,11 @@ namespace FrameDecoder
         WriteAdress=0x0A,//同上  这是干啥的啊
         ChangePWD=0x0F
 	}
-
+    public enum FrameCode
+    {
+        IDHeadEnd=0x68,
+        IDFrameEnd=0x16
+    }
     /// <summary>
     /// 帧解析结果
     /// </summary>

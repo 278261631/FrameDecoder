@@ -39,6 +39,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BuffToFrame.cs" />
     <Compile Include="WEFrame.cs" />
     <Compile Include="WEFrameDecoder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
