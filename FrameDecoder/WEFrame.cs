@@ -73,6 +73,20 @@ namespace FrameDecoder
             set { dataSize = value; }
         }
 
+        bool isFrameCheckPass=false;
+        /// <summary>
+        /// 执行校验
+        /// </summary>
+        public bool IsFrameCheckPass
+        {
+            get {
+                return isFrameCheckPass; 
+            }
+            set { isFrameCheckPass = value; }
+        }
+
+
+
 
         /// <summary>
         /// 编码控制命令
@@ -134,6 +148,9 @@ namespace FrameDecoder
             }
 
         }
+
+
+
 
 
         /// <summary>
@@ -222,7 +239,22 @@ namespace FrameDecoder
             return FrameDecodeResult.error_default;
         }
 
- 
+        /// <summary>
+        /// FrameData定义解析方式
+        /// </summary>
+        public void FrameDataDecode() 
+        {
+            if (this.FrameData!=null&&this.FrameData.Length>0)
+            {
+
+                //连接开始  
+                //请求设备信息 //ID //Version //是否有新文件              //接收错误
+
+
+                //请求文件信息    //文件名  //文件校验码？                 //接收错误
+                //请求文件      //是否最后   //文件主体                 //接收错误
+            }
+        }
 
 
     }
