@@ -132,7 +132,7 @@ namespace FrameDecoder
             switch (responseCode)
             {
                 case 0x01:
-                    this.responseCode = ResponseCode.Read;
+                    this.responseCode = ResponseCode.ReadVersion;
                     break;
                 case 0x04:
                     this.responseCode = ResponseCode.Write;
@@ -164,11 +164,13 @@ namespace FrameDecoder
             Array.Copy(frameCode, 1, deviceNumBCD_Code, 0, 6);
             byte controlCodeSrc = frameCode[8];
             byte[]lsta=new byte[2]; //好像没什么用
-            byte[]data=new byte[frameCode.Length-13];
+            //byte[]data=new byte[frameCode.Length-13];
 
             this.deviceNum = readBCDDeviceNum(deviceNumBCD_Code);
             ControlcodeDecode(controlCodeSrc);
-            DataToFile(data);
+            //DataToFile(data);
+            this.frameData = new byte[frameCode.Length - 13];
+            Array.Copy(frameCode, 11, this.frameData, 0, this.frameData.Length);
 
             return FrameDecodeResult.error_default;
         }
@@ -211,7 +213,7 @@ namespace FrameDecoder
         /// <param name="dataCode">需要发送的数据</param>
         /// <param name="controlCode">控制代码</param>
         /// <returns></returns>
-        public FrameDecodeResult EncodeDataToFrame(byte[] dataCode,byte controlCode)
+        public byte[] EncodeDataToFrame(byte[] dataCode,byte controlCode)
         {
             byte [] dataLength =BitConverter.GetBytes(dataCode.Length / 256);  //应该是两位
             byte[] headArray = { 0x68, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x68 ,controlCode};
@@ -232,11 +234,11 @@ namespace FrameDecoder
             dataCode.CopyTo(frameCode, copyIndex);
             copyIndex += dataCode.Length;
 
-            frameCode[frameCode.Length - 1] = csCode;
-            frameCode[frameCode.Length] = 0x16;
-            
-            
-            return FrameDecodeResult.error_default;
+            frameCode[frameCode.Length - 2] = csCode;
+            frameCode[frameCode.Length-1] = 0x16;
+
+            return frameCode;
+            //return FrameDecodeResult.error_default;
         }
 
         /// <summary>
@@ -290,7 +292,8 @@ namespace FrameDecoder
     /// </summary>
     public enum ResponseCode
 	{
-        Read=0x01,
+        ReadVersion=0x01,
+        SendVersion=0x02,
         Write=0x04,
         WriteAdress=0x0A,//同上  这是干啥的啊
         ChangePWD=0x0F
