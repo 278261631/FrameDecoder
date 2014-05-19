@@ -135,13 +135,13 @@ namespace FrameDecoder
                     this.responseCode = ResponseCode.ReadVersion;
                     break;
                 case 0x04:
-                    this.responseCode = ResponseCode.Write;
+                    this.responseCode = ResponseCode.ReadFileInfo;
                     break;
                 case 0x0A:
-                    this.responseCode = ResponseCode.WriteAdress;
+                    this.responseCode = ResponseCode.SendFileInfo;
                     break;
                 case 0x0F:
-                    this.responseCode = ResponseCode.ChangePWD;
+                    this.responseCode = ResponseCode.ReadFileByte;
                     break;
                 default:
                     break;
@@ -213,7 +213,7 @@ namespace FrameDecoder
         /// <param name="dataCode">需要发送的数据</param>
         /// <param name="controlCode">控制代码</param>
         /// <returns></returns>
-        public byte[] EncodeDataToFrame(byte[] dataCode,byte controlCode)
+        private byte[] EncodeDataToFrame(byte[] dataCode,byte controlCode)
         {
             byte [] dataLength =BitConverter.GetBytes(dataCode.Length / 256);  //应该是两位
             byte[] headArray = { 0x68, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x68 ,controlCode};
@@ -241,6 +241,45 @@ namespace FrameDecoder
             //return FrameDecodeResult.error_default;
         }
 
+
+        /// <summary>
+        /// 封装数据帧
+        /// </summary>
+        /// <param name="dataCode">需要发送的数据</param>
+        /// <param name="controlCode">控制代码</param>
+        /// <returns></returns>
+        public byte[] EncodeDataToFrame(WEFrame frame)
+        {
+            byte[] dataLength = BitConverter.GetBytes(frame.FrameData.Length / 256);  //应该是两位
+            byte[] headArray = { 0x68, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x68, frame.ControlcodeEncode()};
+            if (frame.DeviceNum>0)
+            {
+                byte []idByte=BitConverter.GetBytes(frame.DeviceNum);
+                idByte.CopyTo(headArray, 1);
+            }
+            byte csCode = 0; //校验码  校验和 //Ps usb不是已经校验过了吗？
+            int sumCode = 3000;
+            byte csTestCode = BitConverter.GetBytes(sumCode % 256).First();
+
+            byte[] dataCodeLength = { BitConverter.GetBytes(frame.FrameData.Length % 256).First(), BitConverter.GetBytes(frame.FrameData.Length / 256).First() };
+
+            byte[] frameCode = new byte[headArray.Length + 2 + frame.FrameData.Length + 1 + 1];
+            int copyIndex = 0;
+            headArray.CopyTo(frameCode, copyIndex);
+            copyIndex += headArray.Length;
+
+            dataCodeLength.CopyTo(frameCode, copyIndex);
+            copyIndex += dataCodeLength.Length;
+
+            frame.FrameData.CopyTo(frameCode, copyIndex);
+            copyIndex += frame.FrameData.Length;
+
+            frameCode[frameCode.Length - 2] = csCode;
+            frameCode[frameCode.Length - 1] = 0x16;
+
+            return frameCode;
+            //return FrameDecodeResult.error_default;
+        }
         /// <summary>
         /// FrameData定义解析方式
         /// </summary>
@@ -292,11 +331,12 @@ namespace FrameDecoder
     /// </summary>
     public enum ResponseCode
 	{
-        ReadVersion=0x01,
-        SendVersion=0x02,
-        Write=0x04,
-        WriteAdress=0x0A,//同上  这是干啥的啊
-        ChangePWD=0x0F
+        ReadVersion=0x00,//请求Version
+        SendVersion=0x01,//返回Version
+        ReadFileInfo=0x02,//请求文件名
+        SendFileInfo=0x03,//返回文件名
+        ReadFileByte=0x04,//请求文件
+        SendFileByte=0x05 ,//发送文件
 	}
     public enum FrameCode
     {
