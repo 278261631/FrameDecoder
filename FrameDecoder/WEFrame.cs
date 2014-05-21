@@ -131,17 +131,23 @@ namespace FrameDecoder
             }
             switch (responseCode)
             {
-                case 0x01:
+                case 0x00:
                     this.responseCode = ResponseCode.ReadVersion;
                     break;
-                case 0x04:
+                case 0x01:
+                    this.responseCode = ResponseCode.SendVersion;
+                    break;
+                case 0x02:
                     this.responseCode = ResponseCode.ReadFileInfo;
                     break;
-                case 0x0A:
+                case 0x03:
                     this.responseCode = ResponseCode.SendFileInfo;
                     break;
-                case 0x0F:
+                case 0x04:
                     this.responseCode = ResponseCode.ReadFileByte;
+                    break;
+                case 0x05:
+                    this.responseCode = ResponseCode.SendFileByte;
                     break;
                 default:
                     break;
@@ -167,11 +173,29 @@ namespace FrameDecoder
             //byte[]data=new byte[frameCode.Length-13];
 
             this.deviceNum = readBCDDeviceNum(deviceNumBCD_Code);
+            
             ControlcodeDecode(controlCodeSrc);
             //DataToFile(data);
             this.frameData = new byte[frameCode.Length - 13];
             Array.Copy(frameCode, 11, this.frameData, 0, this.frameData.Length);
-
+            switch (this.responseCode)
+            {
+                case ResponseCode.ReadVersion:
+                    break;
+                case ResponseCode.SendVersion:
+                    break;
+                case ResponseCode.ReadFileInfo:
+                    break;
+                case ResponseCode.SendFileInfo:
+                    
+                    break;
+                case ResponseCode.ReadFileByte:
+                    break;
+                case ResponseCode.SendFileByte:
+                    break;
+                default:
+                    break;
+            }
             return FrameDecodeResult.error_default;
         }
 
