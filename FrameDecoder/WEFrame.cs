@@ -274,7 +274,7 @@ namespace FrameDecoder
         /// <returns></returns>
         public byte[] EncodeDataToFrame(WEFrame frame)
         {
-            byte[] dataLength = BitConverter.GetBytes(frame.FrameData.Length / 256);  //应该是两位
+            //byte[] dataLength = BitConverter.GetBytes(frame.FrameData.Length / 256);  //应该是两位
             byte[] headArray = { 0x68, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x68, frame.ControlcodeEncode()};
             if (frame.DeviceNum>0)
             {
