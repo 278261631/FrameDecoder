@@ -363,10 +363,11 @@ namespace FrameDecoder
         Error=0x40
 	}
 
+    [Obsolete]
     /// <summary>
-    /// 控制码中的命令、请求、应答 的功能代码
+    /// 控制码中的命令、请求、应答 的功能代码   //即将废弃
     /// </summary>
-    public enum RequestResponseCode
+    public  enum RequestResponseCode
 	{
         ReadVersion=0x00,//请求Version
         SendVersion=0x01,//返回Version
@@ -383,6 +384,33 @@ namespace FrameDecoder
         ReadHeartBeat=0x0A,
         SendHeartBeat=0x0B,
 	}
+
+    /// <summary>
+    /// 协议中的控制码
+    /// </summary>
+    public enum OperationCode :ushort
+    {
+        Read,       //00000001
+        Write,      //00000010
+    }
+    /// <summary>
+    /// 协议中的DI1 DI2
+    /// </summary>
+    public enum DataItemCode :ushort
+    {
+        OpVersion=65280,    //[0xFF,0x00] 版本号操作
+        OpDeviceTime=65281, //0xff 0x01 时间
+        OpDeviceID=65282,   //0xff 0x02 ID
+        OpShoot=65283,      //0xff 0x03 拍照
+        OpFileInfo = 65284, //0xff 0x04          请求文件名
+        OpFileByte = 65285, //0xff 0x05          请求文件
+        OpSSID_PWD = 65286, //0xff 0x06 设置Wifi SSID 和PassWord
+        OpHeartBeat = 65287,//0xff 0x06 网络心跳检测
+
+    }
+
+
+
     public enum FrameCode
     {
         IDHeadEnd=0x68,
