@@ -52,11 +52,11 @@ namespace FrameDecoder
 
 
 
-        ResponseCode responseCode;
+        RequestResponseCode responseCode;
         /// <summary>
         /// 控制码中的命令、请求、应答 的功能代码
         /// </summary>
-        public ResponseCode ResponseCode
+        public RequestResponseCode ResponseCode
         {
             get { return responseCode; }
             set { responseCode = value; }
@@ -132,22 +132,22 @@ namespace FrameDecoder
             switch (responseCode)
             {
                 case 0x00:
-                    this.responseCode = ResponseCode.ReadVersion;
+                    this.responseCode = RequestResponseCode.ReadVersion;
                     break;
                 case 0x01:
-                    this.responseCode = ResponseCode.SendVersion;
+                    this.responseCode = RequestResponseCode.SendVersion;
                     break;
                 case 0x02:
-                    this.responseCode = ResponseCode.ReadFileInfo;
+                    this.responseCode = RequestResponseCode.ReadFileInfo;
                     break;
                 case 0x03:
-                    this.responseCode = ResponseCode.SendFileInfo;
+                    this.responseCode = RequestResponseCode.SendFileInfo;
                     break;
                 case 0x04:
-                    this.responseCode = ResponseCode.ReadFileByte;
+                    this.responseCode = RequestResponseCode.ReadFileByte;
                     break;
                 case 0x05:
-                    this.responseCode = ResponseCode.SendFileByte;
+                    this.responseCode = RequestResponseCode.SendFileByte;
                     break;
                 default:
                     break;
@@ -180,18 +180,18 @@ namespace FrameDecoder
             Array.Copy(frameCode, 11, this.frameData, 0, this.frameData.Length);
             switch (this.responseCode)
             {
-                case ResponseCode.ReadVersion:
+                case RequestResponseCode.ReadVersion:
                     break;
-                case ResponseCode.SendVersion:
+                case RequestResponseCode.SendVersion:
                     break;
-                case ResponseCode.ReadFileInfo:
+                case RequestResponseCode.ReadFileInfo:
                     break;
-                case ResponseCode.SendFileInfo:
+                case RequestResponseCode.SendFileInfo:
                     
                     break;
-                case ResponseCode.ReadFileByte:
+                case RequestResponseCode.ReadFileByte:
                     break;
-                case ResponseCode.SendFileByte:
+                case RequestResponseCode.SendFileByte:
                     break;
                 default:
                     break;
@@ -298,12 +298,25 @@ namespace FrameDecoder
             frame.FrameData.CopyTo(frameCode, copyIndex);
             copyIndex += frame.FrameData.Length;
 
+            csCode = CalculateCsCode(frameCode, 0, frameCode.Length - 3);
             frameCode[frameCode.Length - 2] = csCode;
             frameCode[frameCode.Length - 1] = 0x16;
 
             return frameCode;
             //return FrameDecodeResult.error_default;
         }
+
+        private byte CalculateCsCode(byte[] frameCode, int startIndex, int endIndex)
+        {
+            byte csCode = 0x00;
+            while (startIndex<=endIndex)
+            {
+                csCode += frameCode[startIndex];
+                startIndex++;
+            }
+            return csCode;
+        }
+
         /// <summary>
         /// FrameData定义解析方式
         /// </summary>
@@ -353,7 +366,7 @@ namespace FrameDecoder
     /// <summary>
     /// 控制码中的命令、请求、应答 的功能代码
     /// </summary>
-    public enum ResponseCode
+    public enum RequestResponseCode
 	{
         ReadVersion=0x00,//请求Version
         SendVersion=0x01,//返回Version
@@ -361,6 +374,14 @@ namespace FrameDecoder
         SendFileInfo=0x03,//返回文件名
         ReadFileByte=0x04,//请求文件
         SendFileByte=0x05 ,//发送文件
+        SetTime=0x06,
+        //SendTime=0x07, //这里也许可以搞成心跳包  不需要回复
+        SetSSID_PWD=0x08,//设置Wifi SSID 和PassWord
+
+
+
+        ReadHeartBeat=0x0A,
+        SendHeartBeat=0x0B,
 	}
     public enum FrameCode
     {
