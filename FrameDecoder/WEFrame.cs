@@ -85,7 +85,17 @@ namespace FrameDecoder
             set { isFrameCheckPass = value; }
         }
 
+        ushort dataItem;
+        /// <summary>
+        /// 数据标志符 
+        /// </summary>
+        public ushort DataItem
+        {
+            get { return dataItem; }
+            set { dataItem = value; }
+        }
 
+        
 
 
         /// <summary>
@@ -176,26 +186,46 @@ namespace FrameDecoder
             
             ControlcodeDecode(controlCodeSrc);
             //DataToFile(data);
-            this.frameData = new byte[frameCode.Length - 13];
-            Array.Copy(frameCode, 11, this.frameData, 0, this.frameData.Length);
-            switch (this.responseCode)
+            
+            //提取DataItem1 DI1 DataItem2 DI2 或者错误信息
+            switch (this.responseStatus)
             {
-                case RequestResponseCode.ReadVersion:
+                case MainServerResponseStatus.NoError:
+                    this.frameData = new byte[frameCode.Length - 13-2]; //13 是头和尾部，2是后来增加的dataItem
+                    byte[]dataItemTemp=new byte[2];
+                    Array.Copy(frameCode,11,dataItemTemp,0,dataItemTemp.Length);
+                    this.dataItem=BitConverter.ToUInt16(dataItemTemp,0);
+                     Array.Copy(frameCode, 13, this.frameData, 0, this.frameData.Length);
                     break;
-                case RequestResponseCode.SendVersion:
-                    break;
-                case RequestResponseCode.ReadFileInfo:
-                    break;
-                case RequestResponseCode.SendFileInfo:
-                    
-                    break;
-                case RequestResponseCode.ReadFileByte:
-                    break;
-                case RequestResponseCode.SendFileByte:
+                case MainServerResponseStatus.Error:
+                    this.frameData = new byte[1]; //错误码
+                     Array.Copy(frameCode, 13, this.frameData, 0, this.frameData.Length);                    
                     break;
                 default:
                     break;
             }
+
+
+
+           // Array.Copy(frameCode, 11, this.frameData, 0, this.frameData.Length);
+            //switch (this.responseCode)
+            //{
+            //    case RequestResponseCode.ReadVersion:
+            //        break;
+            //    case RequestResponseCode.SendVersion:
+            //        break;
+            //    case RequestResponseCode.ReadFileInfo:
+            //        break;
+            //    case RequestResponseCode.SendFileInfo:
+                    
+            //        break;
+            //    case RequestResponseCode.ReadFileByte:
+            //        break;
+            //    case RequestResponseCode.SendFileByte:
+            //        break;
+            //    default:
+            //        break;
+            //}
             return FrameDecodeResult.error_default;
         }
 
@@ -231,46 +261,45 @@ namespace FrameDecoder
             return result;
         }
 
+        ///// <summary>
+        ///// 封装数据帧
+        ///// </summary>
+        ///// <param name="dataCode">需要发送的数据</param>
+        ///// <param name="controlCode">控制代码</param>
+        ///// <returns></returns>
+        //private byte[] EncodeDataToFrame(byte[] dataCode,byte controlCode)
+        //{
+        //    byte [] dataLength =BitConverter.GetBytes(dataCode.Length / 256);  //应该是两位
+        //    byte[] headArray = { 0x68, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x68 ,controlCode};
+        //    byte csCode = 0; //校验码  校验和 //Ps usb不是已经校验过了吗？
+        //    int sumCode = 3000;
+        //    byte csTestCode = BitConverter.GetBytes(sumCode % 256).First() ;
+
+        //    byte[] dataCodeLength = {BitConverter.GetBytes(dataCode.Length%256).First(),BitConverter.GetBytes(dataCode.Length/256).First()};
+
+        //    byte []frameCode=new byte[headArray.Length+2+dataCode.Length+1+1];
+        //    int copyIndex = 0;
+        //    headArray.CopyTo(frameCode, copyIndex);
+        //    copyIndex += headArray.Length;
+
+        //    dataCodeLength.CopyTo(frameCode, copyIndex);
+        //    copyIndex += dataCodeLength.Length;
+
+        //    dataCode.CopyTo(frameCode, copyIndex);
+        //    copyIndex += dataCode.Length;
+
+        //    frameCode[frameCode.Length - 2] = csCode;
+        //    frameCode[frameCode.Length-1] = 0x16;
+
+        //    return frameCode;
+        //    //return FrameDecodeResult.error_default;
+        //}
+
+
         /// <summary>
         /// 封装数据帧
         /// </summary>
-        /// <param name="dataCode">需要发送的数据</param>
-        /// <param name="controlCode">控制代码</param>
-        /// <returns></returns>
-        private byte[] EncodeDataToFrame(byte[] dataCode,byte controlCode)
-        {
-            byte [] dataLength =BitConverter.GetBytes(dataCode.Length / 256);  //应该是两位
-            byte[] headArray = { 0x68, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x68 ,controlCode};
-            byte csCode = 0; //校验码  校验和 //Ps usb不是已经校验过了吗？
-            int sumCode = 3000;
-            byte csTestCode = BitConverter.GetBytes(sumCode % 256).First() ;
-
-            byte[] dataCodeLength = {BitConverter.GetBytes(dataCode.Length%256).First(),BitConverter.GetBytes(dataCode.Length/256).First()};
-
-            byte []frameCode=new byte[headArray.Length+2+dataCode.Length+1+1];
-            int copyIndex = 0;
-            headArray.CopyTo(frameCode, copyIndex);
-            copyIndex += headArray.Length;
-
-            dataCodeLength.CopyTo(frameCode, copyIndex);
-            copyIndex += dataCodeLength.Length;
-
-            dataCode.CopyTo(frameCode, copyIndex);
-            copyIndex += dataCode.Length;
-
-            frameCode[frameCode.Length - 2] = csCode;
-            frameCode[frameCode.Length-1] = 0x16;
-
-            return frameCode;
-            //return FrameDecodeResult.error_default;
-        }
-
-
-        /// <summary>
-        /// 封装数据帧
-        /// </summary>
-        /// <param name="dataCode">需要发送的数据</param>
-        /// <param name="controlCode">控制代码</param>
+        /// <param name="frame">需要编码的对象，需要设置：ID，   dataItem datacode</param>
         /// <returns></returns>
         public byte[] EncodeDataToFrame(WEFrame frame)
         {
@@ -285,9 +314,38 @@ namespace FrameDecoder
             int sumCode = 3000;
             byte csTestCode = BitConverter.GetBytes(sumCode % 256).First();
 
-            byte[] dataCodeLength = { BitConverter.GetBytes(frame.FrameData.Length % 256).First(), BitConverter.GetBytes(frame.FrameData.Length / 256).First() };
+            byte[] dataCodeLength=new byte[2];
+            switch (this.ResponseStatus)
+            {
+                case MainServerResponseStatus.NoError:
+                    dataCodeLength[0]=  BitConverter.GetBytes(frame.FrameData.Length % 256).First();
+                    dataCodeLength[1]=BitConverter.GetBytes(frame.FrameData.Length / 256).First() ;
+                    break;
+                case MainServerResponseStatus.Error:
+                    dataCodeLength[0]=0x01;
+                    dataCodeLength[1]=0x00;
+                    break;
+                default:
+                    break;
+            }
 
-            byte[] frameCode = new byte[headArray.Length + 2 + frame.FrameData.Length + 1 + 1];
+
+
+            byte[] frameCode;
+            switch (this.ResponseStatus)
+            {
+                case MainServerResponseStatus.NoError:
+                    frameCode = new byte[headArray.Length + 2 +2+ frame.FrameData.Length + 1 + 1];
+                    break;
+                case MainServerResponseStatus.Error:
+                    frameCode = new byte[headArray.Length + 2 + frame.FrameData.Length + 1 + 1];
+                    break;
+                default:
+                    throw new Exception();
+                    break;
+            }
+
+
             int copyIndex = 0;
             headArray.CopyTo(frameCode, copyIndex);
             copyIndex += headArray.Length;
@@ -295,10 +353,28 @@ namespace FrameDecoder
             dataCodeLength.CopyTo(frameCode, copyIndex);
             copyIndex += dataCodeLength.Length;
 
+            //增加的DataItem 1 2
+            switch (this.ResponseStatus)
+            {
+                case MainServerResponseStatus.NoError:
+                    //复制DI1 DI2
+                    byte[]dataItemTemp=new byte[2];
+                    dataItemTemp[0] = (byte)((ushort)this.dataItem % 256);
+                    dataItemTemp[1] = (byte)((ushort)this.dataItem / 256);
+                    dataItemTemp.CopyTo(frameCode, copyIndex);
+                    copyIndex += dataItemTemp.Length;
+                    break;
+                case MainServerResponseStatus.Error:
+                    //没有DI1 DI2  //艹
+                    break;
+                default:
+                    break;
+            }
+
             frame.FrameData.CopyTo(frameCode, copyIndex);
             copyIndex += frame.FrameData.Length;
 
-            csCode = CalculateCsCode(frameCode, 0, frameCode.Length - 3);
+            //csCode = CalculateCsCode(frameCode, 0, frameCode.Length - 3);
             frameCode[frameCode.Length - 2] = csCode;
             frameCode[frameCode.Length - 1] = 0x16;
 
@@ -400,12 +476,12 @@ namespace FrameDecoder
     {
         OpVersion=65280,    //[0xFF,0x00] 版本号操作
         OpDeviceTime=65281, //0xff 0x01 时间
-        OpDeviceID=65282,   //0xff 0x02 ID
+        OpDeviceID=65282,   //0xff 0x02 ID   //ID?????怎么搞出来的？
         OpShoot=65283,      //0xff 0x03 拍照
         OpFileInfo = 65284, //0xff 0x04          请求文件名
         OpFileByte = 65285, //0xff 0x05          请求文件
         OpSSID_PWD = 65286, //0xff 0x06 设置Wifi SSID 和PassWord
-        OpHeartBeat = 65287,//0xff 0x06 网络心跳检测
+        OpHeartBeat = 65287,//0xff 0x07 网络心跳检测
 
     }
 
